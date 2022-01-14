@@ -1,0 +1,42 @@
+body {
+  background-color: #f4f4f4;
+}
+
+.typing-form {
+  font-size: 22px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.typing-form-disabled {
+  color: #999999;
+  background-color: #fafafa;
+}
+
+.typing-hidden {
+  white-space: break-spaces;
+  visibility: hidden;
+  height: 0;
+}
+
+.typing-form:focus {
+  background-color: #333;
+}
+
+.typing-label {
+  padding: 5px 2px;
+  border: 1px solid #00000000;
+}
+
+.typing-input {
+  width: 100%;
+  border-radius: 0.25rem;
+  padding: 5px 2px;
+  border: 1px solid #ced4da;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.typing-input:focus-within {
+  outline-width: 0;
+}
