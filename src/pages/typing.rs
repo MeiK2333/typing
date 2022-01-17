@@ -39,7 +39,7 @@ impl Component for Typing {
 {
     for self.lines.iter().enumerate().map(|(idx, line)| {
         html! {
-            <TypingLine line_number={idx} line={line.clone()}></TypingLine>
+            <TypingLine disabled={idx != 0} line_number={idx} line={line.clone()}></TypingLine>
         }
     })
 }
@@ -89,8 +89,16 @@ impl Component for Typing {
             let elem = spans.item(idx).unwrap().dyn_into::<HtmlElement>().unwrap();
             if elem.offset_top() != offset_top {
                 if offset_top != 0 {
-                    let line = self.spans[pos as usize..idx as usize].to_vec();
-                    pos = idx;
+                    let mut left = pos;
+                    let mut right = idx as usize;
+                    while self.spans[left].is_whitespace() {
+                        left += 1;
+                    }
+                    while right > left && self.spans[right - 1].is_whitespace() {
+                        right -= 1;
+                    }
+                    let line = self.spans[left as usize..right as usize].to_vec();
+                    pos = idx as usize;
                     if line.clone().into_iter().any(|x| x != '\n') {
                         self.lines.push(line);
                     }
