@@ -1,11 +1,11 @@
-use std::fmt::format;
 use gloo::console;
 use wasm_bindgen::JsCast;
-use web_sys::HtmlElement;
+use web_sys::{HtmlElement};
 use yew::prelude::*;
+use crate::components::{typing_line::TypingLine};
 
 pub enum Msg {
-    Update,
+    Update
 }
 
 pub struct Typing {
@@ -24,7 +24,7 @@ impl Component for Typing {
         }
     }
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::Update => {
                 true
@@ -33,25 +33,13 @@ impl Component for Typing {
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
+        console::debug!("review");
         return html! {
 <>
 {
     for self.lines.iter().enumerate().map(|(idx, line)| {
         html! {
-            <div class={classes!("card", (idx != 0).then(|| "typing-form-disabled"))} style="padding: 18px;" key={idx}>
-                <div class="mb-3 typing-form">
-                    <div class="typing-label">
-                        {
-                            for line.iter().enumerate().map(|(jdx, chr)| {
-                                html! {
-                                    <span>{ chr }</span>
-                                }
-                            })
-                        }
-                    </div>
-                    <input type="text" class="typing-input" disabled={idx != 0} />
-                </div>
-            </div>
+            <TypingLine line_number={idx} line={line.clone()}></TypingLine>
         }
     })
 }

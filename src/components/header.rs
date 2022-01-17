@@ -1,4 +1,3 @@
-use gloo::console;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yew_router::scope_ext::HistoryHandle;
@@ -26,10 +25,9 @@ impl Component for Header {
         }
     }
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::UpdateRoute(history) => {
-                console::debug!(history.location().pathname());
+            Msg::UpdateRoute(_history) => {
                 true
             }
         }
