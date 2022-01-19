@@ -6,7 +6,7 @@ use gloo::console;
 
 pub enum Msg {
     InputValue(String),
-    Input(u32),
+    Input(KeyboardEvent),
 }
 
 #[derive(Clone, PartialEq, Properties)]
@@ -14,6 +14,7 @@ pub struct Props {
     pub line_number: usize,
     pub line: Vec<char>,
     pub disabled: bool,
+    pub on_done: Callback<(usize, Vec<char>)>,
 }
 
 pub struct TypingLine {
@@ -37,12 +38,15 @@ impl Component for TypingLine {
                 self.input.append(&mut value.chars().collect());
                 true
             }
-            Msg::Input(code) => {
+            Msg::Input(e) => {
+                let code = e.char_code();
                 // 如果此时该行输入已经够而且输入空格时，完成该行输入
                 if self.input.len() >= ctx.props().line.len() {
                     if code == 32 {
-                        // TODO: 移动至下一行
                         console::debug!(format!("line: {} done", ctx.props().line_number));
+                        ctx.props().on_done.emit((ctx.props().line_number, self.input.clone()));
+                        // 阻止此时后续的按键默认行为
+                        e.prevent_default();
                         return true
                     }
                 }
@@ -58,7 +62,7 @@ impl Component for TypingLine {
             Msg::InputValue(target.unchecked_into::<HtmlInputElement>().value())
         });
         let onkeypress = ctx.link().callback(|e: KeyboardEvent| {
-            Msg::Input(e.char_code())
+            Msg::Input(e)
         });
         return html! {
 <div class={classes!("card", ctx.props().disabled.then(|| "typing-form-disabled"))} style="padding: 18px;">
@@ -82,7 +86,14 @@ impl Component for TypingLine {
                 })
             }
         </div>
-        <input type="text" class="typing-input" {oninput} {onkeypress} disabled={ctx.props().disabled} />
+        <input
+            type="text"
+            class="typing-input"
+            {oninput}
+            {onkeypress}
+            disabled={ctx.props().disabled}
+            autofocus={!ctx.props().disabled}
+        />
     </div>
 </div>
         };

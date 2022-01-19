@@ -1,16 +1,26 @@
 use gloo::console;
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlElement};
+use web_sys::{HtmlElement, HtmlInputElement};
 use yew::prelude::*;
 use crate::components::{typing_line::TypingLine};
 
 pub enum Msg {
-    Update
+    Update,
+    LineDone(usize, Vec<char>),
+}
+
+struct LineState {
+    text: Vec<char>,
+    disabled: bool,
+    node_ref: NodeRef,
+    line_number: usize,
+    value: Vec<char>,
 }
 
 pub struct Typing {
     spans: Vec<char>,
-    lines: Vec<Vec<char>>,
+    lines: Vec<LineState>,
+    active_line: usize,
 }
 
 impl Component for Typing {
@@ -21,6 +31,7 @@ impl Component for Typing {
         Self {
             spans: include_str!("../data/1.txt").chars().collect(),
             lines: vec![],
+            active_line: 0,
         }
     }
 
@@ -29,17 +40,39 @@ impl Component for Typing {
             Msg::Update => {
                 true
             }
+            Msg::LineDone(line, value) => {
+                let state = self.lines.get_mut(line).unwrap();
+                state.value = value;
+                state.disabled = true;
+
+                // 判断是否有下一行
+                if line < self.lines.len() {
+                    self.active_line = line + 1;
+                    let next_line = self.lines.get_mut(line + 1).unwrap();
+                    next_line.disabled = false;
+                }
+                true
+            }
         }
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
-        console::debug!("review");
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let on_done = ctx.link().callback(|(number_line, value)| {
+            Msg::LineDone(number_line, value)
+        });
         return html! {
 <>
 {
     for self.lines.iter().enumerate().map(|(idx, line)| {
         html! {
-            <TypingLine disabled={idx != 0} line_number={idx} line={line.clone()}></TypingLine>
+            <TypingLine
+                key={idx}
+                ref={line.node_ref.clone()}
+                disabled={line.disabled}
+                line_number={line.line_number}
+                line={line.text.clone()}
+                on_done={on_done.clone()}
+            ></TypingLine>
         }
     })
 }
@@ -72,6 +105,12 @@ impl Component for Typing {
 
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
         if !first_render {
+            console::debug!(format!("focus line {}", self.active_line));
+            self.lines.get_mut(self.active_line).unwrap()
+                .node_ref.cast::<HtmlElement>().unwrap()
+                .query_selector("input").unwrap().unwrap()
+                .dyn_into::<HtmlInputElement>().unwrap()
+                .focus().unwrap();
             return;
         }
         let document = web_sys::window().unwrap().document().unwrap();
@@ -83,6 +122,7 @@ impl Component for Typing {
 
         self.lines.clear();
 
+        // TODO: 此处需要单独抽离出来作为模块
         let mut offset_top = 0;
         let mut pos = 0;
         for idx in 0..spans.length() {
@@ -100,7 +140,13 @@ impl Component for Typing {
                     let line = self.spans[left as usize..right as usize].to_vec();
                     pos = idx as usize;
                     if line.clone().into_iter().any(|x| x != '\n') {
-                        self.lines.push(line);
+                        self.lines.push(LineState {
+                            text: line,
+                            disabled: self.lines.len() != 0,
+                            node_ref: Default::default(),
+                            line_number: self.lines.len(),
+                            value: vec![],
+                        });
                     }
                 }
                 offset_top = elem.offset_top();
